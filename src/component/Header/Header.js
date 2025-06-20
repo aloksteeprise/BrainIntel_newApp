@@ -9,6 +9,8 @@ import EditOffSharpIcon from '@mui/icons-material/EditOffSharp';
 import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
 import { checkResults } from '../Recorder/Recorderpage'
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import companyLogo from '../../images/bic.jpeg';
+
 
 const Header = ({ checkResults,feedbackHandler }) => {
   const navigate = useNavigate();
@@ -70,7 +72,7 @@ const Header = ({ checkResults,feedbackHandler }) => {
 
         <a href='/record'>
         <img
-         // src='https://amplify-braininelprod-dev-77a7c-deployment.s3.ap-south-1.amazonaws.com/bic.jpeg'
+         src={companyLogo}
           alt="Company Logo"
           style={{
             width: '65px',
