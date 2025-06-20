@@ -43,36 +43,82 @@ function decodeJWT(token) {
 const host = 'https://velocite.link/';
 
 
-export const login = async (username, password) => {
-  try {
-    debugger;
-    const response = await signIn({ username: username, password: password });
+// export const login = async (username, password) => {
+//   try {
+//     debugger;
+//     //const response = await signIn({ username: username, password: password });
+//     const response = await fetch('api/login', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({
+//         email: email,
+//         password: password
+//       })
+//     });
+//     const data = await response.json();
+// debugger
+//     if (response && response.isSignedIn) {
+//       console.log('User signed in:', response);
+//       const userObject = { userId: username, userInfo: "" };
+//       localStorage.setItem('userObject', JSON.stringify(userObject));
+//       return `1-${username}`;
+//     } else if (response && response.nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+//       console.log('Email id is not verified.');
+//       return '0-Email id is not verified.';
+//     } else {
+//       console.log('Invalid username and password.');
+//       return '0-Invalid username and password.';
+//     }
+//   } catch (error) {
+//     console.error('Error during sign in:', error);
+//     return `0-${error.message}`;
+//   }
+// };
 
-    if (response && response.isSignedIn) {
-      console.log('User signed in:', response);
-      const userObject = { userId: username, userInfo: "" };
+export const login = async (email, password) => {
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      })
+    });
+    const data = await response.json();
+
+    console.log("Status:", response.status);
+    console.log("Response:", data);
+
+    if (response.ok) {
+      console.log('Login simulated successfully');
+      const userObject = { userId: email, email: email };
       localStorage.setItem('userObject', JSON.stringify(userObject));
-      return `1-${username}`;
-    } else if (response && response.nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-      console.log('Email id is not verified.');
-      return '0-Email id is not verified.';
+      return `1-${data.email}`;
     } else {
-      console.log('Invalid username and password.');
-      return '0-Invalid username and password.';
+      console.log('Login failed');
+      return `0-Fake login failed`;
     }
   } catch (error) {
-    console.error('Error during sign in:', error);
+    console.error("Network or fetch error:", error);
     return `0-${error.message}`;
   }
 };
 
 
+
 export const verifyEmail = async (email, verificationCode) => {
-  const response =await confirmSignUp({
-    username: email,
-    confirmationCode: verificationCode
-  });
-  return response;
+
+  const response = await fetch(`${process.env.REACT_APP_API_URL}/api/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        otp: parseInt(verificationCode)
+      })
+    });
+
+    return response;
 };
 
 export const resendSignUp = async (username) => {
@@ -141,20 +187,29 @@ export const handleUpdatePassword = async  (oldPassword, newPassword) =>{
 
 export const register = async (email, password) => {
  
- 
-  const response = await signUp({
-    username: email, // Assuming email as the username
-    password: password,
-    attributes: {
+ const response = await fetch(`${process.env.REACT_APP_API_URL}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         email: email,
-        // given_name: firstName,
-        // family_name: lastName,
+        password: password,
+        createdBy:"admin"
+      })
+    });
+
+//   const response = await signUp({
+//     username: email, // Assuming email as the username
+//     password: password,
+//     attributes: {
+//         email: email,
+//         // given_name: firstName,
+//         // family_name: lastName,
      
-    }
+//     }
 
      
-}
-);
+// }
+// );
   
 
   
