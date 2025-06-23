@@ -53,12 +53,18 @@ export const login = async (email, password) => {
       })
     });
     const data = await response.json();
+    
+    console.log("Backend response:", data); 
 
-    console.log("Status:", response.status);
-    console.log("Response:", data);
+
+    // console.log("Status:", response.status);
+    // console.log("Response:", data);
+
+    // console.log(response.data,)
 
     if (response.ok) {
-      console.log(' Login successful');
+      localStorage.setItem('number', data.userId);
+      console.log('Login simulated successfully');
       const userObject = { userId: email, email: email };
       localStorage.setItem('userObject', JSON.stringify(userObject));
       return `1-${email}`;
