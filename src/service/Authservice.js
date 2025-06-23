@@ -42,39 +42,6 @@ function decodeJWT(token) {
 
 const host = 'https://velocite.link/';
 
-
-// export const login = async (username, password) => {
-//   try {
-//     debugger;
-//     //const response = await signIn({ username: username, password: password });
-//     const response = await fetch('api/login', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({
-//         email: email,
-//         password: password
-//       })
-//     });
-//     const data = await response.json();
-// debugger
-//     if (response && response.isSignedIn) {
-//       console.log('User signed in:', response);
-//       const userObject = { userId: username, userInfo: "" };
-//       localStorage.setItem('userObject', JSON.stringify(userObject));
-//       return `1-${username}`;
-//     } else if (response && response.nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-//       console.log('Email id is not verified.');
-//       return '0-Email id is not verified.';
-//     } else {
-//       console.log('Invalid username and password.');
-//       return '0-Invalid username and password.';
-//     }
-//   } catch (error) {
-//     console.error('Error during sign in:', error);
-//     return `0-${error.message}`;
-//   }
-// };
-
 export const login = async (email, password) => {
   try {
     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
@@ -91,14 +58,24 @@ export const login = async (email, password) => {
     console.log("Response:", data);
 
     if (response.ok) {
-      console.log('Login simulated successfully');
+      console.log(' Login successful');
       const userObject = { userId: email, email: email };
       localStorage.setItem('userObject', JSON.stringify(userObject));
-      return `1-${data.email}`;
-    } else {
-      console.log('Login failed');
-      return `0-Fake login failed`;
+      return `1-${email}`;
     }
+    if (data?.message === "Email not verified yet. Please verify your email address first.") {
+      console.warn("Email is not verified.");
+      return '0-Email id is not verified.';
+    }
+
+    if (data?.message === "Invalid email or password") {
+      console.warn("Invalid credentials.");
+      return '0-Invalid username and password.';
+    }
+
+    console.warn("Login failed with unknown reason.");
+    return `0-${data?.message || "Login failed"}`;
+
   } catch (error) {
     console.error("Network or fetch error:", error);
     return `0-${error.message}`;
@@ -108,7 +85,6 @@ export const login = async (email, password) => {
 
 
 export const verifyEmail = async (email, verificationCode) => {
-
   const response = await fetch(`${process.env.REACT_APP_API_URL}/api/verify-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,15 +93,20 @@ export const verifyEmail = async (email, verificationCode) => {
         otp: parseInt(verificationCode)
       })
     });
-
     return response;
 };
 
 export const resendSignUp = async (username) => {
   try {
    
-    await resendSignUpCode({email: username});
-    debugger;
+    //await resendSignUpCode({email: username});
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: username }),
+    });
+
+    const data = await response.json();
     console.log('Confirmation code resent successfully'); 
   } catch (error) {
     console.error('Error resending confirmation code:', error);
@@ -136,8 +117,16 @@ export const validateEmailSendOtp = async (username) => {
   let result = '';
   try {
    
-     result = await resendSignUpCode({username});
-     result = '1-'+ 'Confirmation code resent successfully';
+     //result = await resendSignUpCode({username});
+     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: username }),
+    });
+
+    const data = await response.json();
+
+    result = '1-'+ data.message;
     console.log('Confirmation code resent successfully'); 
    
   } catch (error) {
@@ -159,30 +148,54 @@ export const userAttributeVerificationCode = async (email, verificationCode) => 
 };
 // Define the handleConfirmResetPassword function
 
-export const handleConfirmResetPassword = async ( username,confirmationCode,  newPassword ) => {
-  let result;
-  try {
-     await confirmResetPassword({username,confirmationCode,  newPassword });
-    result = '1-'+'Success';
-  } catch (error) {
-    result = '0-'+ error.message;
-  }
-  return result;
+export const handleConfirmResetPassword = async (username, otp, password) => {
+  const response = await fetch(`${process.env.REACT_APP_API_URL}/api/verify-forgot-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: username,
+      otp: otp,
+      newPassword: password
+    })
+  });
+
+  const data = await response.json();
+  return { success: response.ok, message: data.message };
 };
 
-export const handleUpdatePassword = async  (oldPassword, newPassword) =>{
-  let isPasswordChangeDone ='';
-  try {
-    
-    const result =  await updatePassword({ oldPassword, newPassword });
-    isPasswordChangeDone = '1-'+ '' + result;
-    return isPasswordChangeDone;
 
+export const handleUpdatePassword = async (oldPassword, newPassword) => {
+  const userString = localStorage.getItem('userObject');
+  const user = userString ? JSON.parse(userString) : null;
+
+  let isPasswordChangeDone = '';
+
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/update-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user?.email,
+        currentPassword: oldPassword,
+        newPassword: newPassword
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      isPasswordChangeDone = '0-' + (data.message || 'Something went wrong');
+    } else {
+      isPasswordChangeDone = '1-' + (data.message || 'Password updated successfully');
+    }
+
+    return isPasswordChangeDone;
   } catch (err) {
-    isPasswordChangeDone = '0-'+ '' + err.message;
+    isPasswordChangeDone = '0-' + err.message;
     return isPasswordChangeDone;
   }
-}
+};
+
 
 
 export const register = async (email, password) => {
@@ -197,6 +210,14 @@ export const register = async (email, password) => {
       })
     });
 
+    
+  const data = await response.json();
+    if (response.ok) {
+    return true;
+  } else {
+    throw new Error(data?.message || "Registration failed");
+  }
+};
 //   const response = await signUp({
 //     username: email, // Assuming email as the username
 //     password: password,
@@ -227,44 +248,59 @@ export const register = async (email, password) => {
 
   */
 
-  let result;
-  const userId = response?.userId;
-  if (userId) {
-    result = true;
-  } else {
-    result = false;
-  }
+//   let result;
+//   const userId = response?.userId;
+//   if (userId) {
+//     result = true;
+//   } else {
+//     result = false;
+//   }
 
-  return result;
-};
+//   return result;
+// };
 
 
 
 
 export const resetPassword = async function handleResetPassword(username) {
-  let responseMesage='';
-  try {
-   
-   
-    const output = await awsResetPassword({ username });
-   const message= handleResetPasswordNextSteps(output);
-   responseMesage = '1'+'-'+message;
-  } catch (error) {
+  let responseMessage = '';
 
-    if(error.name)
-      {
-        //responseMesage= error.message;
-        responseMesage = '0'+'-'+error.message;
-      }
-      
-    
-    console.log(error);
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: username }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      responseMessage = '0-' + (data.message || 'Something went wrong');
+    } else {
+      // simulate the same as AWS output
+      const simulatedOutput = {
+        nextStep: {
+          resetPasswordStep: 'CONFIRM_RESET_PASSWORD_WITH_CODE',
+          codeDeliveryDetails: {
+            deliveryMedium: 'email'
+          }
+        }
+      };
+
+      const message = handleResetPasswordNextSteps(simulatedOutput);
+      responseMessage = '1-' + message;
+    }
+  } catch (error) {
+    responseMessage = '0-' + error.message;
+    console.error('resetPassword error:', error);
   }
-  return responseMesage;
+
+  return responseMessage;
 };
 
 
 export const forgotPassowrd = async (email) => {
+
   let forgotPassowrdResponse;
   // const response = await axios.post(`${host}users/password-reset-request`, {
 
@@ -276,13 +312,33 @@ export const forgotPassowrd = async (email) => {
     }
   );
   */
-  const response = await resetPassword({ email });
-  forgotPassowrdResponse =handleResetPasswordNextSteps(response);
+  //const response = await resetPassword({ email });
+
+  const response = await fetch(`${process.env.REACT_APP_API_URL}/api/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    });
+
+     const data = await response.json();
+
+    if (!response.ok) {
+      forgotPassowrdResponse = '0-' + (data.message || 'Something went wrong');
+    } else {
+      const simulatedOutput = {
+        nextStep: {
+          resetPasswordStep: 'CONFIRM_RESET_PASSWORD_WITH_CODE',
+          codeDeliveryDetails: {
+            deliveryMedium: 'email'
+          }
+        }
+      };
+        forgotPassowrdResponse = handleResetPasswordNextSteps(simulatedOutput);
+    }
   return forgotPassowrdResponse;
 };
 
 function handleResetPasswordNextSteps(output) {
-  
   const { nextStep } = output;
   let forgotPassowrdResponse1;
   switch (nextStep.resetPasswordStep) {
@@ -322,7 +378,8 @@ export const isAuthenticated = () => {
 
 export const handleSignOut = async () => {
   try {
-     await signOut();
+     //await signOut();
+    localStorage.clear();
   } catch (error) {
     console.log('error signing out: ', error);
     handlerLogs(error.message)

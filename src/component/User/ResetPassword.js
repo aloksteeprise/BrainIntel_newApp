@@ -69,31 +69,29 @@ const ResetPassword = (props) => {
     const verifyEmailOTPds = async (ev) => {
         setChecked(true);
         try {
+            if (!password || password.length < 8) {
+                setChecked(false);
+                setErrorMsg("Password must be at least 8 characters long");
+                return false;
+            }
             const result = await handleConfirmResetPassword(username, otpcode, password);
-            let isResult='0';
-            let isResultMessage='';
-            if(result){
-                isResult = result.split('-')[0];
-                isResultMessage = result.split('-')[1];
-              }
-              if(isResult=='1'){
-                localStorage.removeItem("items")
+
+            if (result.success) {
+                localStorage.removeItem("items");
                 setChecked(false);
-                handlerLogs('verifyEmailOTPds > Password have been update.');
+                handlerLogs('verifyEmailOTPds > Password has been updated.');
                 navigate('/');
-              }
-              else{
+            } else {
                 setChecked(false);
-                setErrorMsg(isResultMessage);
-                handlerLogs(`verifyEmailOTPds > `+isResultMessage);
-              }
-        }
-        catch (err) {
-            // console.log('thes are the errors', err);
+                setErrorMsg(result.message || "Something went wrong");
+                handlerLogs(`verifyEmailOTPds > ${result.message}`);
+            }
+            } catch (err) {
             setChecked(false);
-            setErrorMsg(err.message);
-            handlerLogs(`verifyEmailOTPd > errors:`+ err.message);
+            setErrorMsg("Server error. Please try again later.");
+            handlerLogs(`verifyEmailOTPds > ${err.message}`);
         }
+
     }
 
     const handleKeyDown = (event) => {

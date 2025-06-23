@@ -40,7 +40,6 @@ const InstructionPage = (props) => {
     try {
       if (!password) {
         setErrorMsg('OTP cannot be blank');
-        debugger;
         return;
       }
   
@@ -49,9 +48,15 @@ const InstructionPage = (props) => {
         return;
       }
       setErrorMsg('');
-  
-      // Continue with verification if password meets criteria
-      await verifyEmail(email, password);
+
+      const response = await verifyEmail(email, password);
+      const data = await response.json();
+      if (!response.ok) {
+        setErrorMsg(data.message || 'Invalid OTP');
+        handlerLogs(`verifyEmailOTP Error > ${data.message}`);
+        return;
+      }
+
       handlerLogs('verifyEmailOTP > OTP is verified');
       navigate('/verifyEmail');
     } catch (err) {

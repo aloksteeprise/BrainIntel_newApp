@@ -111,29 +111,48 @@ const Registration = (props) => {
   /* registration*/
   const signUp = async (ev) => {
     ev.preventDefault();
-    try {
-      //await register(email, firstName, lastName, password);
-      debugger;
-      await register(email, password);
-      // navigate('/login');
-      setCheckMail(true);
-      //setPage('link');
-      handlerLogs('signUp > OTP has been send to user email');
-      navigate('/Instruction');
-
-    } catch (err) {
+  try {
+    if (password.length < 8) {
       setSignupErrormsgShow(true);
-      if (password.length < 8 ){
-        setSignupErrormsg("Password must be minimum 8 character");
-        handlerLogs('signUp > '+'Password must be minimum 8 character');
-        return false;
-      }
-      else{
-        setSignupErrormsg(err.message);
-        handlerLogs('signUp > '+err.message);
-        return false;
-      }
+      setSignupErrormsg("Password must be minimum 8 characters");
+      handlerLogs('signUp > Password too short');
+      return;
     }
+
+    await register(email, password);
+
+    handlerLogs('signUp > OTP has been sent to user email');
+    setCheckMail(true);
+    navigate('/Instruction');
+
+  } catch (err) {
+    setSignupErrormsgShow(true);
+    setSignupErrormsg(err.message);
+    handlerLogs('signUp > ' + err.message);
+  }
+    // try {
+    //   //await register(email, firstName, lastName, password);
+    //   debugger;
+    //   await register(email, password);
+    //   // navigate('/login');
+    //   setCheckMail(true);
+    //   //setPage('link');
+    //   handlerLogs('signUp > OTP has been send to user email');
+    //   navigate('/Instruction');
+
+    // } catch (err) {
+    //   setSignupErrormsgShow(true);
+    //   if (password.length < 8 ){
+    //     setSignupErrormsg("Password must be minimum 8 character");
+    //     handlerLogs('signUp > '+'Password must be minimum 8 character');
+    //     return false;
+    //   }
+    //   else{
+    //     setSignupErrormsg(err.message);
+    //     handlerLogs('signUp > '+err.message);
+    //     return false;
+    //   }
+    // }
   };
 
   const checkHandler = () => {
