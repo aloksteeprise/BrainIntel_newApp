@@ -8,7 +8,7 @@ import AWS from 'aws-sdk';
 import Header from '../Header/Header';
 import Footer from './Footer.js';
 import jsPDF from 'jspdf';
-import { handlerLogs, submitFeedback, handleFetchUserAttributes, latestUserAttributes,submitLoginUserAttributeFeedback } from '../../service/Authservice';
+import { handlerLogs, submitFeedback, handleFetchUserAttributes, latestUserAttributes, submitLoginUserAttributeFeedback } from '../../service/Authservice';
 import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Tooltip } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import { array } from 'prop-types';
@@ -20,7 +20,7 @@ let audioCtx;
 function RecorderPage() {
 
   const [feedbackValue, setFeedbackValue] = useState('');
-  const [feedbackbuttonenable,setFeedbackButtonEnable ] =useState(false)
+  const [feedbackbuttonenable, setFeedbackButtonEnable] = useState(false)
   const [feedbackError, setFeedbackError] = useState(null);
   const [feedbackData, setFeedbackData] = useState([]);
   const [feedbackfilename, setFeedbackFilename] = useState("")
@@ -202,13 +202,13 @@ function RecorderPage() {
             recording: false,
             completed: false,
             headingvisible: true,
-            view:false ,
-            record:false
+            view: false,
+            record: false
 
 
           }));
         }
-       
+
         else {
 
           alert('There is no files for feedback.')
@@ -237,17 +237,17 @@ function RecorderPage() {
 
       if ("family_name" in loginUserAttribute) {
         console.log("yes")
-        if(loginUserAttribute.family_name !="0"){
+        if (loginUserAttribute.family_name != "0") {
           setFeedbackButtonEnable(true)
         }
-    
+
       }
       else {
         console.log("no")
         setFeedbackButtonEnable(false);
-         submitLoginUserAttributeFeedback('0');
+        submitLoginUserAttributeFeedback('0');
       }
-      
+
     }
   }
 
@@ -306,32 +306,74 @@ function RecorderPage() {
 
   const submitHandler = async () => {
     debugger;
+    const id = localStorage.getItem('number')
     let name = getFileName();
     const folderName = getUserFolderName();
-    var params = {
-      Body: state.audioFile,
-      Bucket: albumBucketName,
-      Key: `${folderName}/${name + '.wav'}`,
-    };
 
-    s3.putObject(params, async function (err, data) {
-      if (err) {
-        handlerLogs(`submitHandler > ` + err.stack);
-      } else {
-        setFeedbackButtonEnable(false);
-        setTimeout(function(){ 
-        setFeedbackButtonEnable(true)
-        submitLoginUserAttributeFeedback('1');
-      },10000)
+
+
+
+    const formData = new FormData();
+    formData.append("userId", id);
+    formData.append("email", folderName);
+    formData.append("wavFileName", name + ".wav");
+    formData.append("file", state.audioFile); // ✅ Must be "file"
+    formData.append("wavFilePath", `/uploads/audio/${name}.wav`);
+    formData.append("pdfFileName", "");
+    formData.append("pdfFilePath", "");
+    formData.append("isFileGenerated", "false");
+    formData.append("updatedBy", "");
+
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/create-report`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      // var params = {
+      //   Body: state.audioFile,
+      //   Bucket: albumBucketName,
+      //   Key: `${folderName}/${name + '.wav'}`,
+      // };
+
+      // s3.putObject(params, async function (err, data) {
+      //   if (err) {
+      //     handlerLogs(`submitHandler > ` + err.stack);
+      //   } else {
+      //     setFeedbackButtonEnable(false);
+      //     setTimeout(function () {
+      //       setFeedbackButtonEnable(true)
+      //       submitLoginUserAttributeFeedback('1');
+      //     }, 10000)
+      //     setFeedbackFilename(name);
+
+      //     await submitFeedback("", "0");
+
+      //     handlerLogs(`submitHandler > ` + 'success');
+      //     //checkuserloginuser();
+
+      //   }
+      // });
+
+
+      if (response.ok) {
         setFeedbackFilename(name);
-
-        await submitFeedback("", "0");
-        
-        handlerLogs(`submitHandler > ` + 'success');
-        //checkuserloginuser();
-       
+        setFeedbackButtonEnable(false);
+        // setTimeout(() => {
+        //   setFeedbackButtonEnable(true);
+        //   submitLoginUserAttributeFeedback('1');
+        // }, 10000);
+        // await submitFeedback("", "0");
+        handlerLogs(`submitHandler > Upload successful`);
+      } else {
+        handlerLogs(`submitHandler > Upload failed: ${data.message}`);
       }
-    });
+    } catch (err) {
+      handlerLogs(`submitHandler > Error: ${err.message}`);
+    }
+
 
     setState((state) => ({
       ...state,
@@ -436,24 +478,24 @@ function RecorderPage() {
       Bucket: albumBucketName,
       Prefix: prefix
     };
-  
+
     try {
       // List objects in the bucket with the specified prefix
       const data = await s3.listObjectsV2(params).promise();
-      
+
       // Filter WAV files
       const wavFiles = data.Contents.filter(item => item.Key.endsWith('.wav'));
-     
-  
+
+
       // Sort by LastModified date in descending order
       wavFiles.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
-  
+
       // Return the date and time part of the latest WAV file without the .wav extension
       if (wavFiles.length > 0) {
         const latestFileName = wavFiles[0].Key.split('/').pop();
-       
+
         const dateAndTimePart = latestFileName.split('_').slice(1).join('_').replace('.wav', ''); // Extract date and time part and remove .wav
-        
+
         return dateAndTimePart;
       } else {
         return null;
@@ -463,39 +505,39 @@ function RecorderPage() {
       return null; // Return null if there's an error
     }
   };
-  
-  
-  
+
+
+
 
   const submitfeedbackhandler = async () => {
     const userInfo = getUserInfo();
     const id = userInfo?.userId;
     const folderName = getUserFolderName();
     console.log(id);
-    
+
     // Get the latest WAV file with only the date and time part
     const latestWavFile = await getLatestWavFile(albumBucketName, folderName);
-  
+
     if (!latestWavFile) {
       setFeedbackError("No WAV file found");
       return;
     }
-  
+
     const inputValue = latestWavFile + '-' + feedbackValue;
-  
+
     if (!feedbackValue) {
       setFeedbackError("Feedback % not selected");
       return;
     }
-  
+
     setUserFeedbackcount("1");
     console.log(inputValue, "Akash2");
-  
+
     let result = await submitFeedback(inputValue, "1");
     setSnackbarMessage(result.message);
     setSnackbarOpen(true);
     setChecked(false);
-  
+
     setState((state) => ({
       ...state,
       completed: false,
@@ -505,9 +547,9 @@ function RecorderPage() {
       headingvisible: false
     }));
   };
-  
-  
-  
+
+
+
 
 
 
@@ -665,30 +707,67 @@ function RecorderPage() {
   const [s3Files, s3SetFiles] = useState([]);
 
 
-  const checkResults = () => {
+  // const checkResults = () => {
 
+  //   const userInfo = getUserInfo();
+  //   let id = userInfo?.userId;
+  //   const folderName = getUserFolderName();
+  //   s3.listObjects({ Prefix: folderName }, function (err, data) {
+  //     if (err) {
+  //       return alert('There was a brutal error viewing your album: ' + err.message);
+  //     } else {
+  //       handlerLogs(`checkResults > ` + JSON.stringify(data));
+  //       const sortedContents = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
+  //       let r = [];
+  //       sortedContents.forEach((val) => {
+  //         if (val.Key && val.Key.endsWith('.pdf')) { // Only include PDF files
+  //           r.push(val.Key);
+  //         }
+  //       });
+
+  //       if (r.length) {
+  //         setResult([...r]);
+  //       }
+  //     }
+  //   });
+  //   setState((state) => ({ ...state, completed: false, view: true, startAnalysis: false, submitted: false, recording: false, feedbacktable: false, headingvisible: false, feedbackVisible: false, record: false }));
+  // };
+  const checkResults = async () => {
     const userInfo = getUserInfo();
-    let id = userInfo?.userId;
-    const folderName = getUserFolderName();
-    s3.listObjects({ Prefix: folderName }, function (err, data) {
-      if (err) {
-        return alert('There was a brutal error viewing your album: ' + err.message);
-      } else {
-        handlerLogs(`checkResults > ` + JSON.stringify(data));
-        const sortedContents = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
-        let r = [];
-        sortedContents.forEach((val) => {
-          if (val.Key && val.Key.endsWith('.pdf')) { // Only include PDF files
-            r.push(val.Key);
-          }
-        });
+    const email = userInfo?.email;
+    if (!email) {
+      return alert("User email missing.");
+    }
+    debugger;
 
-        if (r.length) {
-          setResult([...r]);
-        }
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?email=${email}`);
+      const data = await response.json();
+
+      if (data.files && data.files.length > 0) {
+        setResult(data.files); // Array of { name, url }
+      } else {
+        setResult([]);
       }
-    });
-    setState((state) => ({ ...state, completed: false, view: true, startAnalysis: false, submitted: false, recording: false, feedbacktable:false,headingvisible:false,feedbackVisible:false,record:false}));
+
+      handlerLogs(`checkResults > ${JSON.stringify(data)}`);
+    } catch (err) {
+      console.error("Error fetching results:", err);
+      alert("Failed to fetch result files.");
+    }
+
+    setState(state => ({
+      ...state,
+      completed: false,
+      view: true,
+      startAnalysis: false,
+      submitted: false,
+      recording: false,
+      feedbacktable: false,
+      headingvisible: false,
+      feedbackVisible: false,
+      record: false
+    }));
   };
 
 
@@ -699,13 +778,13 @@ function RecorderPage() {
   };
 
   const backtoTable = () => {
-    setState((state) => ({ ...state, view: false, startAnalysis: true, headingvisible:false,feedbacktable:false,feedbackVisible:false }));
+    setState((state) => ({ ...state, view: false, startAnalysis: true, headingvisible: false, feedbacktable: false, feedbackVisible: false }));
     setChecked(false)
   };
 
 
   const backtoStartFromRecord = () => {
-    setState((state) => ({ ...state, view: false, startAnalysis: true, record: false}));
+    setState((state) => ({ ...state, view: false, startAnalysis: true, record: false }));
   };
 
   useEffect(() => {
@@ -804,7 +883,7 @@ function RecorderPage() {
               <label for="checkbox">
                 {' '}
                 I read and agree to the attached
-                 {/* <a href='https://amplify-braininelprod-dev-77a7c-deployment.s3.ap-south-1.amazonaws.com/consent.pdf' target="_blank"
+                {/* <a href='https://amplify-braininelprod-dev-77a7c-deployment.s3.ap-south-1.amazonaws.com/consent.pdf' target="_blank"
 
                 >
                   Consent
@@ -832,9 +911,9 @@ function RecorderPage() {
             <br />
 
 
-          {feedbackbuttonenable?( <button className="button" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
+            {feedbackbuttonenable ? (<button className="button" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
               Feedback
-            </button>) :null}
+            </button>) : null}
           </div>
 
           <div></div>
@@ -933,7 +1012,7 @@ function RecorderPage() {
 
               {/* <button className="button-secondary" onClick={checkResults} style={{ marginTop: "5px" }}>
                 Reports
-              </button> */} 
+              </button> */}
 
               <button className="button" onClick={submitHandler}>
                 Submit for pdf report generation
@@ -1011,11 +1090,11 @@ function RecorderPage() {
             </table>
           </div>
           <button className="button" onClick={backtoTable}>
-              {' '}
-              Close
-            </button>
+            {' '}
+            Close
+          </button>
         </div>
-        
+
       )}
 
 
@@ -1032,9 +1111,9 @@ function RecorderPage() {
             <button className="button" onClick={checkResults} style={{ marginTop: "10px" }}>
               Reports
             </button>
-            {feedbackbuttonenable?( <button className="button-secondary" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
+            {feedbackbuttonenable ? (<button className="button-secondary" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
               Feedback
-            </button>) :null}
+            </button>) : null}
 
 
             <button className="button" onClick={closeHandler} style={{ marginTop: "41px" }}>
@@ -1054,30 +1133,23 @@ function RecorderPage() {
               Close
             </button>
             <div style={{ fontFamily: 'Proxima' }}>
-              {result.length === 0 && <p> No records found!</p>}
+              {result.length === 0 && <p>No records found!</p>}
 
               {result.length > 0 &&
-                result.map((r) => {
-                  console.log(r);
-                  return (
-                    <p>
-                      {' '}
-                      {/* Here is the link to */}
-                      <label className="custLabel"
-                        onClick={() => {
-                          onButtonClick(r);
-                        }
-                        }
-                      >
-                        {' '}
-                        {r.split('/')[1]}
-                      </label>
-                    </p>
-                  );
-                })}
-
-
+                result.map((r, index) => (
+                  <p key={index}>
+                    <a
+                      className="custLabel"
+                      href={`${process.env.REACT_APP_API_URL}${r.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {r.name || r.url.split("/").pop()}
+                    </a>
+                  </p>
+                ))}
             </div>
+
           </div>
           <div></div>
         </div>
