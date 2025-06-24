@@ -226,11 +226,26 @@ function RecorderPage() {
 
 
   const feedbackHandler = async () => {
-  
-
-  debugger
   const userInfo = getUserInfo();
   const id = localStorage.getItem('number')
+  let reportIds;
+
+  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(id)}`);
+
+  if (!feedbackResponse.ok) {
+    throw new Error("Failed to fetch data");
+  }
+
+  const data = await feedbackResponse.json();
+
+  if (Array.isArray(data.files) && data.files.length > 0) {
+    setResult(data.files);
+  reportIds = data.files.map(item => item.reportId);
+    }
+    else{
+      reportIds = []
+    }
+  
   if (!id) {
     alert("User ID is missing.");
     return;
@@ -252,10 +267,14 @@ function RecorderPage() {
     // }
  
     setFeedbackData(feedbackList);
+    const feedbackReportIds = feedbackList.map(f => f.Id);
+
+    // Check if any reportId in localStorage does NOT have feedback
+    const shouldShowFeedback = reportIds.some(reportId => !feedbackReportIds.includes(reportId));
  
     setState(prevState => ({
       ...prevState,
-       feedbackVisible: true, // Show feedback section
+       feedbackVisible: shouldShowFeedback, // Show feedback section
             submitted: false, // Hide main content
             startAnalysis: false,
             recording: false,
@@ -881,7 +900,7 @@ const checkResults = async () => {
     }
 
     const data = await response.json();
-debugger;
+
     if (Array.isArray(data.files) && data.files.length > 0) {
       setResult(data.files); // Expecting [{ name, url, createdDate, reportId }]
 const reportIds = data.files.map(item => item.reportId);
@@ -1187,7 +1206,7 @@ localStorage.setItem("reportIds", JSON.stringify(reportIds));
 
 
 
-      {state.feedbackVisible && JSON.parse(localStorage.getItem("reportIds") || "[]").length > 0 && (
+      {state.feedbackVisible && (
         <div className="feedback-section" >
           <FormControl component="fieldset">
 
