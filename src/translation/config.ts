@@ -72,7 +72,7 @@ const config = {
   passwordmaxlenght:15,
   ResendOTP:"",
   
-  onupdatePasswordLogin: 'Please enter the mail for OTP',
+  onupdatePasswordLogin: 'Please login Again',
   resendOTPButton: 'Resend OTP',
   validateEmailOtp: 'Validate OTP',
   updateOTP: 'Please enter OTP send on mail.',
