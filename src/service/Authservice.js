@@ -53,6 +53,8 @@ export const login = async (email, password) => {
       })
     });
     const data = await response.json();
+
+    localStorage.setItem('token', data.token)
     
     console.log("Backend response:", data); 
 
@@ -173,13 +175,17 @@ export const handleConfirmResetPassword = async (username, otp, password) => {
 export const handleUpdatePassword = async (oldPassword, newPassword) => {
   const userString = localStorage.getItem('userObject');
   const user = userString ? JSON.parse(userString) : null;
+   const token = localStorage.getItem('token');
 
   let isPasswordChangeDone = '';
 
   try {
     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/update-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, 
+      },
       body: JSON.stringify({
         email: user?.email,
         currentPassword: oldPassword,

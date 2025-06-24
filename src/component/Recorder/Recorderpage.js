@@ -232,7 +232,14 @@ function RecorderPage() {
   let reportIds;
   let feedbacktable = false;
 
-  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(id)}`);
+  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(id)}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
+    },
+  },
+)
 
   if (!feedbackResponse.ok) {
     throw new Error("Failed to fetch data");
@@ -256,7 +263,14 @@ function RecorderPage() {
   }
  
   try {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${id}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${id}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
+    },
+  }
+);
  
     if (!response.ok) {
       throw new Error("Failed to fetch feedback data");
@@ -379,6 +393,7 @@ function RecorderPage() {
   const submitHandler = async () => {
     debugger;
     const id = localStorage.getItem('number')
+    const token = localStorage.getItem('token');
     let name = getFileName();
     const folderName = getUserFolderName();
 
@@ -400,6 +415,9 @@ function RecorderPage() {
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/api/create-report`, {
         method: "POST",
+        headers: {
+        Authorization: `Bearer ${token}`, 
+      },
         body: formData,
       });
 
@@ -690,7 +708,7 @@ function RecorderPage() {
   // };
 
   // holds report IDs globally in this file
-
+const token = localStorage.getItem('token');
 
 
 const submitfeedbackhandler = async () => {
@@ -711,8 +729,15 @@ const submitfeedbackhandler = async () => {
   }
 
 
-  debugger
-  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(userId)}`);
+ 
+  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(userId)}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
+    },
+  }
+);
 
   if (!feedbackResponse.ok) {
     throw new Error("Failed to fetch data");
@@ -733,7 +758,15 @@ const submitfeedbackhandler = async () => {
     return;
   }
 
-  const response1 = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${userId}`);
+  const response1 = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${userId}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
+    },
+  }
+);
+
  
   if (!response1.ok) {
     throw new Error("Failed to fetch feedback data");
@@ -755,7 +788,8 @@ const submitfeedbackhandler = async () => {
     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/submit-feedback`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ⬅️ Include token in Authorization header
       },
       body: JSON.stringify({
         userId,
@@ -770,7 +804,6 @@ const submitfeedbackhandler = async () => {
 
     // ✅ Remove used reportId from array & save back
     reportIds.shift(); // remove first
-    localStorage.setItem("reportIds", JSON.stringify(reportIds));
 
     setSnackbarMessage(result.message);
     setSnackbarOpen(true);
@@ -930,7 +963,15 @@ const checkResults = async () => {
     return;
   }
   try {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
+    },
+  }
+);
+debugger;
     
     if (!response.ok) {
       throw new Error("Failed to fetch data");
