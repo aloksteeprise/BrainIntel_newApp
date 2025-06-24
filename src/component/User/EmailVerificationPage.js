@@ -44,12 +44,20 @@ const EmailVerificationPage = (props) => {
             // handleConfirmResetPassword(username,otpcode,password);
              const resutl = await verifyEmail(username,otpcode)
             // navigate('/');
-            localStorage.removeItem("items")
+            
             setChecked(false);
-            setSuccMsg('Your email is verified please login using back button.')
-            setErrorMsg('');
-            setOtpcode('');
-            setChecked(true);
+            if(resutl.status == 400){
+            setErrorMsg('Invalid OTP');
+            }
+            else{
+                setSuccMsg('Your email is verified please login using back button.')
+                setOtpcode('');
+                setChecked(true);
+                localStorage.removeItem("items")
+                setErrorMsg('');
+            }
+            //setOtpcode('');
+            //setChecked(true);
             handlerLogs(`verifyEmailOTPds > `+' Your email is verified.')
         }
         catch(err){

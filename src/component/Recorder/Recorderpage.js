@@ -775,6 +775,7 @@ const submitfeedbackhandler = async () => {
     setSnackbarMessage(result.message);
     setSnackbarOpen(true);
     setChecked(false);
+    setFeedbackValue("");
 
     setState((state) => ({
       ...state,
@@ -881,6 +882,7 @@ const submitfeedbackhandler = async () => {
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
+    setFeedbackValue("");
   };
   const recordAgainHandler = () => {
     setState((state) => ({ ...state, completed: false, record: true }));
@@ -976,6 +978,7 @@ const checkResults = async () => {
   const backtoTable = () => {
     setState((state) => ({ ...state, view: false, startAnalysis: true, headingvisible: false, feedbacktable: false, feedbackVisible: false }));
     setChecked(false)
+     setFeedbackValue("");
   };
 
 
