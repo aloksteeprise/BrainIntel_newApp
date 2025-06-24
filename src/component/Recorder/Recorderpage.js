@@ -166,64 +166,110 @@ function RecorderPage() {
     stopRecording();
   };
 
-  const feedbackHandler = async () => {
-    //const userInfo = getUserInfo();
-    //let id = userInfo?.userId;
-    // const folderName = getUserFolderName();
-    //const pdfCount = await s3.listAndCountFiles(albumBucketName, folderName);
-    //const pdfCount = await listAndCountFiles('', folderName);
+  // const feedbackHandler = async () => {
+  //   //const userInfo = getUserInfo();
+  //   //let id = userInfo?.userId;
+  //   // const folderName = getUserFolderName();
+  //   //const pdfCount = await s3.listAndCountFiles(albumBucketName, folderName);
+  //   //const pdfCount = await listAndCountFiles('', folderName);
 
-    //const pdfCount =  s3.listAndCountFiles({ Prefix: folderName });
-    let sortedContents = 0;
-    debugger;
-    const userInfo = getUserInfo();
-    let id = userInfo?.userId;
-    const folderName = getUserFolderName();
-    s3.listObjects({ Prefix: folderName }, function (err, data) {
-      if (err) {
-        return alert('There was a brutal error viewing your album: ' + err.message);
-      } else {
-        handlerLogs(`checkResults > ` + JSON.stringify(data));
-        const sortedContents = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
-        let r = [];
-        sortedContents.forEach((val) => {
-          if (val.Key && val.Key.endsWith('.pdf')) {
-            r.push(val.Key);
-          }
-        });
-        if (r.length) {
-          fetchFeedbackStatus();
-          setFeedbackValue("")
-          setState(prevState => ({
-            ...prevState,
-            feedbackVisible: true, // Show feedback section
+  //   //const pdfCount =  s3.listAndCountFiles({ Prefix: folderName });
+  //   let sortedContents = 0;
+  //   debugger;
+  //   const userInfo = getUserInfo();
+  //   let id = userInfo?.userId;
+  //   const folderName = getUserFolderName();
+  //   s3.listObjects({ Prefix: folderName }, function (err, data) {
+  //     if (err) {
+  //       return alert('There was a brutal error viewing your album: ' + err.message);
+  //     } else {
+  //       handlerLogs(`checkResults > ` + JSON.stringify(data));
+  //       const sortedContents = data.Contents.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
+  //       let r = [];
+  //       sortedContents.forEach((val) => {
+  //         if (val.Key && val.Key.endsWith('.pdf')) {
+  //           r.push(val.Key);
+  //         }
+  //       });
+  //       if (r.length) {
+  //         fetchFeedbackStatus();
+  //         setFeedbackValue("")
+  //         setState(prevState => ({
+  //           ...prevState,
+  //           feedbackVisible: true, // Show feedback section
+  //           submitted: false, // Hide main content
+  //           startAnalysis: false,
+  //           recording: false,
+  //           completed: false,
+  //           headingvisible: true,
+  //           view: false,
+  //           record: false
+
+
+  //         }));
+  //       }
+
+  //       else {
+
+  //         alert('There is no files for feedback.')
+  //       }
+  //     }
+  //   });
+
+
+
+
+
+
+
+  // };
+
+
+  const feedbackHandler = async () => {
+  
+
+  debugger
+  const userInfo = getUserInfo();
+  const id = localStorage.getItem('number')
+  if (!id) {
+    alert("User ID is missing.");
+    return;
+  }
+ 
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${id}`);
+ 
+    if (!response.ok) {
+      throw new Error("Failed to fetch feedback data");
+    }
+ 
+    const data = await response.json();
+    const feedbackList = data.feedback || [];
+ 
+    // if (feedbackList.length === 0) {
+    //   alert("There is no files for feedback.");
+    //   return;
+    // }
+ 
+    setFeedbackData(feedbackList);
+ 
+    setState(prevState => ({
+      ...prevState,
+       feedbackVisible: true, // Show feedback section
             submitted: false, // Hide main content
             startAnalysis: false,
             recording: false,
             completed: false,
             headingvisible: true,
             view: false,
-            record: false
-
-
-          }));
-        }
-
-        else {
-
-          alert('There is no files for feedback.')
-        }
-      }
-    });
-
-
-
-
-
-
-
-  };
-
+            record: false,
+            feedbacktable:true
+    }));
+  } catch (error) {
+    console.error("Error fetching feedback data:", error);
+    alert("Something went wrong: " + error.message);
+  }
+};
   useEffect(() => {
     checkuserloginuser();
 
@@ -506,47 +552,53 @@ function RecorderPage() {
     }
   };
 
+//   useEffect(() => {
+//   if (reportss.length > 0) {
+//     console.log("Updated reportss:", reportss);
+//     // now it's safe to use
+//   }
+// }, [reportss]);
 
 
 
-  const submitfeedbackhandler = async () => {
-    const userInfo = getUserInfo();
-    const id = userInfo?.userId;
-    const folderName = getUserFolderName();
-    console.log(id);
+  // const submitfeedbackhandler = async () => {
+  //   const userInfo = getUserInfo();
+  //   const id = userInfo?.userId;
+  //   const folderName = getUserFolderName();
+  //   console.log(id);
 
-    // Get the latest WAV file with only the date and time part
-    const latestWavFile = await getLatestWavFile(albumBucketName, folderName);
+ 
+  //   const latestWavFile = await getLatestWavFile(albumBucketName, folderName);
 
-    if (!latestWavFile) {
-      setFeedbackError("No WAV file found");
-      return;
-    }
+  //   if (!latestWavFile) {
+  //     setFeedbackError("No WAV file found");
+  //     return;
+  //   }
 
-    const inputValue = latestWavFile + '-' + feedbackValue;
+  //   const inputValue = latestWavFile + '-' + feedbackValue;
 
-    if (!feedbackValue) {
-      setFeedbackError("Feedback % not selected");
-      return;
-    }
+  //   if (!feedbackValue) {
+  //     setFeedbackError("Feedback % not selected");
+  //     return;
+  //   }
 
-    setUserFeedbackcount("1");
-    console.log(inputValue, "Akash2");
+  //   setUserFeedbackcount("1");
+  //   console.log(inputValue, "Akash2");
 
-    let result = await submitFeedback(inputValue, "1");
-    setSnackbarMessage(result.message);
-    setSnackbarOpen(true);
-    setChecked(false);
+  //   let result = await submitFeedback(inputValue, "1");
+  //   setSnackbarMessage(result.message);
+  //   setSnackbarOpen(true);
+  //   setChecked(false);
 
-    setState((state) => ({
-      ...state,
-      completed: false,
-      startAnalysis: true,
-      feedbacktable: false,
-      feedbackVisible: false,
-      headingvisible: false
-    }));
-  };
+  //   setState((state) => ({
+  //     ...state,
+  //     completed: false,
+  //     startAnalysis: true,
+  //     feedbacktable: false,
+  //     feedbackVisible: false,
+  //     headingvisible: false
+  //   }));
+  // };
 
 
 
@@ -610,6 +662,80 @@ function RecorderPage() {
   //     console.error('Error fetching user attributes:', error);
   //   }
   // };
+
+  // holds report IDs globally in this file
+
+
+
+const submitfeedbackhandler = async () => {
+  const userInfo = getUserInfo();
+  const createdBy = userInfo?.email;
+  const userId = localStorage.getItem('number');
+  const satisfactionLevel = feedbackValue;
+
+  if (!userId) {
+    setFeedbackError("User ID not found");
+    return;
+  }
+
+  if (!satisfactionLevel) {
+    setFeedbackError("Feedback % not selected");
+    return;
+  }
+
+  // ✅ Read from localStorage
+  const stored = localStorage.getItem("reportIds");
+  let reportIds = stored ? JSON.parse(stored) : [];
+
+  if (!Array.isArray(reportIds) || reportIds.length === 0) {
+    setFeedbackError("No report IDs to submit feedback for.");
+    return;
+  }
+
+  const reportId = reportIds[0]; // Get first
+
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/submit-feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId,
+        reportId,
+        satisfactionLevel,
+        createdBy,
+      }),
+    });
+
+    const result = await response.json();
+    console.log(`✅ Feedback submitted for reportId ${reportId}:`, result.message);
+
+    // ✅ Remove used reportId from array & save back
+    reportIds.shift(); // remove first
+    localStorage.setItem("reportIds", JSON.stringify(reportIds));
+
+    setSnackbarMessage(result.message);
+    setSnackbarOpen(true);
+    setChecked(false);
+
+    setState((state) => ({
+      ...state,
+      completed: false,
+      startAnalysis: true,
+      feedbacktable: false,
+      feedbackVisible: false,
+      headingvisible: false,
+    }));
+  } catch (error) {
+    console.error(`❌ Error submitting feedback:`, error);
+    setFeedbackError("Failed to submit feedback.");
+  }
+};
+
+
+
+
 
   const fetchFeedbackStatus = async () => {
     try {
@@ -704,6 +830,7 @@ function RecorderPage() {
   };
 
   const [result, setResult] = useState([]);
+  // const [reportss, setReportss] = useState([]);
   const [s3Files, s3SetFiles] = useState([]);
 
 
@@ -732,43 +859,63 @@ function RecorderPage() {
   //   });
   //   setState((state) => ({ ...state, completed: false, view: true, startAnalysis: false, submitted: false, recording: false, feedbacktable: false, headingvisible: false, feedbackVisible: false, record: false }));
   // };
-  const checkResults = async () => {
-    const userInfo = getUserInfo();
-    const email = userInfo?.email;
-    if (!email) {
-      return alert("User email missing.");
-    }
-    debugger;
 
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?email=${email}`);
-      const data = await response.json();
+    let reportIdQueue = []; 
+const checkResults = async () => {
+  const userInfo = getUserInfo();
+  // const email = userInfo?.email;
+   const UserID = localStorage.getItem('number')
 
-      if (data.files && data.files.length > 0) {
-        setResult(data.files); // Array of { name, url }
-      } else {
-        setResult([]);
-      }
 
-      handlerLogs(`checkResults > ${JSON.stringify(data)}`);
-    } catch (err) {
-      console.error("Error fetching results:", err);
-      alert("Failed to fetch result files.");
+  if (!UserID) {
+    alert("UserID is missing.");
+    return;
+  }
+  debugger
+
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`);
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
     }
 
-    setState(state => ({
-      ...state,
-      completed: false,
-      view: true,
-      startAnalysis: false,
-      submitted: false,
-      recording: false,
-      feedbacktable: false,
-      headingvisible: false,
-      feedbackVisible: false,
-      record: false
-    }));
-  };
+    const data = await response.json();
+debugger;
+    if (Array.isArray(data.files) && data.files.length > 0) {
+      setResult(data.files); // Expecting [{ name, url, createdDate, reportId }]
+const reportIds = data.files.map(item => item.reportId);
+localStorage.setItem("reportIds", JSON.stringify(reportIds));
+
+
+
+     
+      debugger;
+    } else {
+      setResult([]);
+    }
+
+    handlerLogs(`checkResults > ${JSON.stringify(data)}`);
+  } catch (err) {
+    console.error("Error fetching results:", err);
+    alert("Failed to fetch result files.");
+  }
+
+  setState((state) => ({
+    ...state,
+    completed: false,
+    view: true,
+    startAnalysis: false,
+    submitted: false,
+    recording: false,
+    feedbacktable: false,
+    headingvisible: false,
+    feedbackVisible: false,
+    record: false,
+  }));
+};
+
+
 
 
 
@@ -911,9 +1058,9 @@ function RecorderPage() {
             <br />
 
 
-            {feedbackbuttonenable ? (<button className="button" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
+            <button className="button" onClick={feedbackHandler} style={{ margin: "20px auto" }}>
               Feedback
-            </button>) : null}
+            </button>
           </div>
 
           <div></div>
@@ -1040,7 +1187,7 @@ function RecorderPage() {
 
 
 
-      {state.feedbackVisible && (
+      {state.feedbackVisible && JSON.parse(localStorage.getItem("reportIds") || "[]").length > 0 && (
         <div className="feedback-section" >
           <FormControl component="fieldset">
 
@@ -1082,8 +1229,8 @@ function RecorderPage() {
               <tbody>
                 {feedbackData.map((feedback, index) => (
                   <tr key={index}>
-                    <td>{feedback.customFeedback}</td>
-                    <td>{feedback.percentage}%</td>
+                <td>{feedback.Report}</td>
+                <td>{feedback.SatisfactionLevel}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -1135,19 +1282,23 @@ function RecorderPage() {
             <div style={{ fontFamily: 'Proxima' }}>
               {result.length === 0 && <p>No records found!</p>}
 
-              {result.length > 0 &&
-                result.map((r, index) => (
-                  <p key={index}>
-                    <a
-                      className="custLabel"
-                      href={`${process.env.REACT_APP_API_URL}${r.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {r.name || r.url.split("/").pop()}
-                    </a>
-                  </p>
-                ))}
+{result.length > 0 &&
+  result.map((r, index) => (
+    <p key={index}>
+      <a
+        className="custLabel"
+        href={`${process.env.REACT_APP_API_URL}${r.url}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {r.name || r.url.split("/").pop()}
+      </a>
+      <span style={{ marginLeft: "10px", fontSize: "12px", color: "#777" }}>
+        {/* {new Date(r.createdDate).toLocaleString()} */}
+      </span>
+    </p>
+  ))}
+
             </div>
 
           </div>
