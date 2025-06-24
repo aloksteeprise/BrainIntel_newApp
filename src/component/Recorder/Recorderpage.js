@@ -226,9 +226,11 @@ function RecorderPage() {
 
 
   const feedbackHandler = async () => {
+    debugger
   const userInfo = getUserInfo();
   const id = localStorage.getItem('number')
   let reportIds;
+  let feedbacktable = false;
 
   const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(id)}`);
 
@@ -244,6 +246,8 @@ function RecorderPage() {
     }
     else{
       reportIds = []
+       alert("There is no file for feedback.");
+       return ;
     }
   
   if (!id) {
@@ -265,7 +269,11 @@ function RecorderPage() {
     //   alert("There is no files for feedback.");
     //   return;
     // }
- 
+ debugger
+    if(feedbackList.length > 0){
+      feedbacktable = true
+    }
+    
     setFeedbackData(feedbackList);
     const feedbackReportIds = feedbackList.map(f => f.Id);
 
@@ -282,7 +290,7 @@ function RecorderPage() {
             headingvisible: true,
             view: false,
             record: false,
-            feedbacktable:true
+            feedbacktable:feedbacktable
     }));
   } catch (error) {
     console.error("Error fetching feedback data:", error);
@@ -691,6 +699,7 @@ const submitfeedbackhandler = async () => {
   const createdBy = userInfo?.email;
   const userId = localStorage.getItem('number');
   const satisfactionLevel = feedbackValue;
+  let reportIds;
 
   if (!userId) {
     setFeedbackError("User ID not found");
@@ -703,8 +712,22 @@ const submitfeedbackhandler = async () => {
   }
 
   // ✅ Read from localStorage
-  const stored = localStorage.getItem("reportIds");
-  let reportIds = stored ? JSON.parse(stored) : [];
+  //const stored = localStorage.getItem("reportIds");
+  const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(userId)}`);
+
+  if (!feedbackResponse.ok) {
+    throw new Error("Failed to fetch data");
+  }
+
+  const data = await feedbackResponse.json();
+
+  if (Array.isArray(data.files) && data.files.length > 0) {
+    setResult(data.files);
+    reportIds = data.files.map(item => item.reportId);
+    }
+    else{
+      reportIds = []
+    }
 
   if (!Array.isArray(reportIds) || reportIds.length === 0) {
     setFeedbackError("No report IDs to submit feedback for.");
@@ -882,7 +905,6 @@ const submitfeedbackhandler = async () => {
     let reportIdQueue = []; 
 const checkResults = async () => {
   const userInfo = getUserInfo();
-  // const email = userInfo?.email;
    const UserID = localStorage.getItem('number')
 
 
@@ -890,8 +912,6 @@ const checkResults = async () => {
     alert("UserID is missing.");
     return;
   }
-  debugger
-
   try {
     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`);
     
@@ -902,14 +922,9 @@ const checkResults = async () => {
     const data = await response.json();
 
     if (Array.isArray(data.files) && data.files.length > 0) {
-      setResult(data.files); // Expecting [{ name, url, createdDate, reportId }]
-const reportIds = data.files.map(item => item.reportId);
-localStorage.setItem("reportIds", JSON.stringify(reportIds));
-
-
-
-     
-      debugger;
+      setResult(data.files);
+      const reportIds = data.files.map(item => item.reportId);
+      localStorage.setItem("reportIds", JSON.stringify(reportIds));
     } else {
       setResult([]);
     }
