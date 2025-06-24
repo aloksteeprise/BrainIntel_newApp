@@ -305,7 +305,6 @@ function RecorderPage() {
   const checkuserloginuser = async () => {
 
     const loginUserAttribute = await handleFetchUserAttributes();
-    debugger;
     if (loginUserAttribute != null) {
 
       if ("family_name" in loginUserAttribute) {
@@ -711,8 +710,8 @@ const submitfeedbackhandler = async () => {
     return;
   }
 
-  // ✅ Read from localStorage
-  //const stored = localStorage.getItem("reportIds");
+
+  debugger
   const feedbackResponse = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(userId)}`);
 
   if (!feedbackResponse.ok) {
@@ -734,7 +733,23 @@ const submitfeedbackhandler = async () => {
     return;
   }
 
-  const reportId = reportIds[0]; // Get first
+  const response1 = await fetch(`${process.env.REACT_APP_API_URL}/api/get-feedback-by-user/${userId}`);
+ 
+  if (!response1.ok) {
+    throw new Error("Failed to fetch feedback data");
+  }
+ 
+  const data1 = await response1.json();
+  const feedbackList = data1.feedback || [];
+  const feedbackReportIds = feedbackList.map(fb => fb.ReportId);
+  const reportIdsToSubmit = reportIds.filter(rid => !feedbackReportIds.includes(rid));
+
+  if (!Array.isArray(reportIdsToSubmit) || reportIdsToSubmit.length === 0) {
+    setFeedbackError("All feedbacks already submitted.");
+    return;
+  }
+
+  const reportId = reportIdsToSubmit[0];
 
   try {
     const response = await fetch(`${process.env.REACT_APP_API_URL}/api/submit-feedback`, {
