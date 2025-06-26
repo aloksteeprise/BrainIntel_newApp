@@ -396,7 +396,7 @@ function RecorderPage() {
     const token = localStorage.getItem('token');
     let name = getFileName();
     const folderName = getUserFolderName();
-
+    const username = folderName.split('@')[0];
 
 
 
@@ -409,7 +409,7 @@ function RecorderPage() {
     formData.append("pdfFileName", "");
     formData.append("pdfFilePath", "");
     formData.append("isFileGenerated", "false");
-    formData.append("updatedBy", "");
+    formData.append("updatedBy", username);
 
 
     try {
@@ -713,7 +713,7 @@ const token = localStorage.getItem('token');
 
 const submitfeedbackhandler = async () => {
   const userInfo = getUserInfo();
-  const createdBy = userInfo?.email;
+  const createdBy = userInfo?.email.split('@')[0];
   const userId = localStorage.getItem('number');
   const satisfactionLevel = feedbackValue;
   let reportIds;

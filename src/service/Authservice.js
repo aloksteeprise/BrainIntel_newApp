@@ -212,13 +212,15 @@ export const handleUpdatePassword = async (oldPassword, newPassword) => {
 
 export const register = async (email, password) => {
  
+  const name = email.split('@')[0];
+
  const response = await fetch(`${process.env.REACT_APP_API_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
         password: password,
-        createdBy:"admin"
+        createdBy: name
       })
     });
 
