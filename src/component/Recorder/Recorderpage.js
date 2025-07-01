@@ -292,7 +292,7 @@ function RecorderPage() {
     }
     
     setFeedbackData(feedbackList);
-    const feedbackReportIds = feedbackList.map(f => f.Id);
+    const feedbackReportIds = feedbackList.map(f => f.ReportId);
 
     // Check if any reportId in localStorage does NOT have feedback
     const shouldShowFeedback = reportIds.some(reportId => !feedbackReportIds.includes(reportId));
