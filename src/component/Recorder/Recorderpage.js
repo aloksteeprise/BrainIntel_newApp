@@ -4,11 +4,10 @@ Reference :: https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Record
 
 import './RecorderPage.scss';
 import { useEffect, useState } from 'react';
-import AWS from 'aws-sdk';
 import Header from '../Header/Header';
 import Footer from './Footer.js';
 import jsPDF from 'jspdf';
-import { handlerLogs, submitFeedback, handleFetchUserAttributes, latestUserAttributes, submitLoginUserAttributeFeedback } from '../../service/Authservice';
+import { handlerLogs, submitFeedback, } from '../../service/Authservice';
 import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Tooltip } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import { array } from 'prop-types';
@@ -51,39 +50,39 @@ function RecorderPage() {
 
   const [streamData, setStreamData] = useState();
 
-  var albumBucketName = 'amplify-brainintel1-dev-59877-deployment';
-  var bucketRegion = 'ap-south-1';
-  var IdentityPoolIdt = 'ap-south-1:3b01329c-a976-4e4e-a0f5-70a53b026882';
+  // var albumBucketName = 'amplify-brainintel1-dev-59877-deployment';
+  // var bucketRegion = 'ap-south-1';
+  // var IdentityPoolIdt = 'ap-south-1:3b01329c-a976-4e4e-a0f5-70a53b026882';
 
-  AWS.config.region = bucketRegion; // Region
-  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: IdentityPoolIdt,
-  });
-  AWS.config.update({
-    region: bucketRegion,
-    apiVersion: 'latest',
-    credentials: {
-      accessKeyId: 'AKIA6QH6OHEDILGKQ4VX',
-      secretAccessKey: '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',
-    },
-  });
+  // AWS.config.region = bucketRegion; // Region
+  // AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+  //   IdentityPoolId: IdentityPoolIdt,
+  // });
+  // AWS.config.update({
+  //   region: bucketRegion,
+  //   apiVersion: 'latest',
+  //   credentials: {
+  //     accessKeyId: 'AKIA6QH6OHEDILGKQ4VX',
+  //     secretAccessKey: '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',
+  //   },
+  // });
 
-  var s3 = new AWS.S3({
-    apiVersion: '2012-10-17',
-    params: { Bucket: albumBucketName },
-  });
+  // var s3 = new AWS.S3({
+  //   apiVersion: '2012-10-17',
+  //   params: { Bucket: albumBucketName },
+  // });
   useEffect(() => {
     const initializeMediaRecorder = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        handlerLogs('getUserMedia success: >');
+        //handlerLogs('getUserMedia success: >');
         setStreamData(stream);
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.ondataavailable = handleDataAvailable;
         mediaRecorder.onstop = handleRecordingStopped;
       } catch (error) {
-        handlerLogs(`getUserMedia > ` + error);
+        //handlerLogs(`getUserMedia > ` + error);
       }
     };
 
@@ -242,7 +241,9 @@ function RecorderPage() {
 )
 
   if (!feedbackResponse.ok) {
-    throw new Error("Failed to fetch data");
+    if(feedbackResponse.status == 403)
+        alert("Session expired. Log in to continue.");
+   // throw new Error("Failed to fetch data");
   }
 
   const data = await feedbackResponse.json();
@@ -252,8 +253,10 @@ function RecorderPage() {
   reportIds = data.files.map(item => item.reportId);
     }
     else{
-      reportIds = []
+      if (feedbackResponse.ok) {
+        reportIds = []
        alert("There is no file for feedback.");
+      }
        return ;
     }
   
@@ -318,23 +321,23 @@ function RecorderPage() {
 
   const checkuserloginuser = async () => {
 
-    const loginUserAttribute = await handleFetchUserAttributes();
-    if (loginUserAttribute != null) {
+    // const loginUserAttribute = await handleFetchUserAttributes();
+    // if (loginUserAttribute != null) {
 
-      if ("family_name" in loginUserAttribute) {
-        console.log("yes")
-        if (loginUserAttribute.family_name != "0") {
-          setFeedbackButtonEnable(true)
-        }
+    //   if ("family_name" in loginUserAttribute) {
+    //     console.log("yes")
+    //     if (loginUserAttribute.family_name != "0") {
+    //       setFeedbackButtonEnable(true)
+    //     }
 
-      }
-      else {
-        console.log("no")
-        setFeedbackButtonEnable(false);
-        submitLoginUserAttributeFeedback('0');
-      }
+    //   }
+    //   else {
+    //     console.log("no")
+    //     setFeedbackButtonEnable(false);
+        // submitLoginUserAttributeFeedback('0');
+    //   }
 
-    }
+    // }
   }
 
   const handleFeedbackChange = (event) => {
@@ -447,6 +450,18 @@ function RecorderPage() {
       //   }
       // });
 
+      if (!response.ok) {
+      if(response.status == 403)
+          alert("Session expired. Log in to continue.");
+          setState((state) => ({
+          ...state,
+          submitted: false,
+          startAnalysis: true,
+          completed:false
+        }));
+        setChecked(false)
+          return
+      }
 
       if (response.ok) {
         setFeedbackFilename(name);
@@ -459,9 +474,11 @@ function RecorderPage() {
         handlerLogs(`submitHandler > Upload successful`);
       } else {
         handlerLogs(`submitHandler > Upload failed: ${data.message}`);
+        alert(`submitHandler > Upload failed: ${data.message}`);
       }
     } catch (err) {
       handlerLogs(`submitHandler > Error: ${err.message}`);
+      alert(`submitHandler > Error: ${err.message}`);
     }
 
 
@@ -474,37 +491,37 @@ function RecorderPage() {
   };
 
 
-  const createPdf = (folderName, name) => {
-    const userInfo = getUserInfo();
-    let id = userInfo?.userId;
-    id = id.split('@')[0];
-    const doc = new jsPDF();
-    doc.text(`Hello ${id}`, 10, 10);
-    doc.text('This is a sample PDF file.', 10, 20);
+  // const createPdf = (folderName, name) => {
+  //   const userInfo = getUserInfo();
+  //   let id = userInfo?.userId;
+  //   id = id.split('@')[0];
+  //   const doc = new jsPDF();
+  //   doc.text(`Hello ${id}`, 10, 10);
+  //   doc.text('This is a sample PDF file.', 10, 20);
 
-    // Save the PDF
-    const pdfBlob = doc.output('blob');
-    var params = {
-      // Body: state.audioFile,
-      Bucket: albumBucketName,
-      Key: `${folderName}/${name + '.pdf'}`,
-      // Key: name + '.wav',
-      Body: pdfBlob,
-      ContentType: 'application/pdf',
-    };
-    s3.putObject(params, function (err, data) {
-      if (err) {
-        handlerLogs(`createPdf > ` + err.stack);
-      } else {
-        handlerLogs(`createPdf > ` + 'success');
-      }
-    });
-    setState((state) => ({
-      ...state,
-      completed: false,
-      submitted: true,
-    }));
-  };
+  //   // Save the PDF
+  //   const pdfBlob = doc.output('blob');
+  //   var params = {
+  //     // Body: state.audioFile,
+  //     Bucket: albumBucketName,
+  //     Key: `${folderName}/${name + '.pdf'}`,
+  //     // Key: name + '.wav',
+  //     Body: pdfBlob,
+  //     ContentType: 'application/pdf',
+  //   };
+  //   s3.putObject(params, function (err, data) {
+  //     if (err) {
+  //       handlerLogs(`createPdf > ` + err.stack);
+  //     } else {
+  //       handlerLogs(`createPdf > ` + 'success');
+  //     }
+  //   });
+  //   setState((state) => ({
+  //     ...state,
+  //     completed: false,
+  //     submitted: true,
+  //   }));
+  // };
   const getUserInfo = () => {
     return JSON.parse(localStorage.getItem('userObject'));
   };
@@ -564,36 +581,13 @@ function RecorderPage() {
   // };
 
   const getLatestWavFile = async (bucketName, prefix) => {
-    const params = {
-      Bucket: albumBucketName,
-      Prefix: prefix
-    };
+    // const params = {
+    //   Bucket: albumBucketName,
+    //   Prefix: prefix
+    // };
 
-    try {
-      // List objects in the bucket with the specified prefix
-      const data = await s3.listObjectsV2(params).promise();
-
-      // Filter WAV files
-      const wavFiles = data.Contents.filter(item => item.Key.endsWith('.wav'));
-
-
-      // Sort by LastModified date in descending order
-      wavFiles.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
-
-      // Return the date and time part of the latest WAV file without the .wav extension
-      if (wavFiles.length > 0) {
-        const latestFileName = wavFiles[0].Key.split('/').pop();
-
-        const dateAndTimePart = latestFileName.split('_').slice(1).join('_').replace('.wav', ''); // Extract date and time part and remove .wav
-
-        return dateAndTimePart;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error('Error listing objects:', error);
-      return null; // Return null if there's an error
-    }
+   
+    
   };
 
 //   useEffect(() => {
@@ -829,54 +823,54 @@ const submitfeedbackhandler = async () => {
 
 
   const fetchFeedbackStatus = async () => {
-    try {
-      const userAttributes = await latestUserAttributes();
-      // console.log(userAttributes);
-      setLatestFeedbackcount(userAttributes);
+    // try {
+    //   const userAttributes = await latestUserAttributes();
+    //   // console.log(userAttributes);
+    //   setLatestFeedbackcount(userAttributes);
 
-      const feedbackString = userAttributes['custom:Userfeedback'];
-      const feedbackStatus = userAttributes['custom:LatestFeedback'];
-      // if (feedbackStatus === "1") {
-      //   setState((prevState) => ({ ...prevState, feedbackVisible: false }));
-      // }
-      // if (!feedbackString) {
-      //   setState(prevState => ({ ...prevState, feedbackVisible: false,headingvisible:true }));
-      //   return; 
-      // }
-      const email = userAttributes['email'];
-      const emailPrefix = email.split('@')[0];
+    //   const feedbackString = userAttributes['custom:Userfeedback'];
+    //   const feedbackStatus = userAttributes['custom:LatestFeedback'];
+    //   // if (feedbackStatus === "1") {
+    //   //   setState((prevState) => ({ ...prevState, feedbackVisible: false }));
+    //   // }
+    //   // if (!feedbackString) {
+    //   //   setState(prevState => ({ ...prevState, feedbackVisible: false,headingvisible:true }));
+    //   //   return; 
+    //   // }
+    //   const email = userAttributes['email'];
+    //   const emailPrefix = email.split('@')[0];
 
-      const feedbackEntries = feedbackString.split(';').filter(entry => entry !== "");
+    //   const feedbackEntries = feedbackString.split(';').filter(entry => entry !== "");
 
-      const processedFeedbackData = feedbackEntries.map(entry => {
-        const [customFeedback, percentage] = entry.split('-');
-        const timestamp = customFeedback;
-        // console.log(timestamp)
-        return {
-          customFeedback: `${emailPrefix}_${customFeedback}`,
-          percentage,
-          timestamp
-        };
-      });
+    //   const processedFeedbackData = feedbackEntries.map(entry => {
+    //     const [customFeedback, percentage] = entry.split('-');
+    //     const timestamp = customFeedback;
+    //     // console.log(timestamp)
+    //     return {
+    //       customFeedback: `${emailPrefix}_${customFeedback}`,
+    //       percentage,
+    //       timestamp
+    //     };
+    //   });
 
 
-      const sortedFeedbackData = processedFeedbackData.sort((a, b) => {
+    //   const sortedFeedbackData = processedFeedbackData.sort((a, b) => {
 
-        const dateA = convertTimestamp(a.timestamp);
-        const dateB = convertTimestamp(b.timestamp);
-        return dateB - dateA;
-      });
+    //     const dateA = convertTimestamp(a.timestamp);
+    //     const dateB = convertTimestamp(b.timestamp);
+    //     return dateB - dateA;
+    //   });
 
-      setFeedbackData(sortedFeedbackData);
+    //   setFeedbackData(sortedFeedbackData);
 
-      if (feedbackStatus === "1") {
-        setState(prevState => ({ ...prevState, feedbackVisible: false, feedbacktable: true, headingvisible: true }));
-      } else {
-        setState(prevState => ({ ...prevState, feedbackVisible: true, feedbacktable: true, headingvisible: true }));
-      }
-    } catch (error) {
-      console.error('Error fetching user attributes:', error);
-    }
+    //   if (feedbackStatus === "1") {
+    //     setState(prevState => ({ ...prevState, feedbackVisible: false, feedbacktable: true, headingvisible: true }));
+    //   } else {
+    //     setState(prevState => ({ ...prevState, feedbackVisible: true, feedbacktable: true, headingvisible: true }));
+    //   }
+    // } catch (error) {
+    //   console.error('Error fetching user attributes:', error);
+    // }
   };
 
   // useEffect(() => {
@@ -974,7 +968,10 @@ const checkResults = async () => {
 debugger;
     
     if (!response.ok) {
-      throw new Error("Failed to fetch data");
+    if(response.status == 403)
+        alert("Session expired. Log in to continue.");
+      return;
+    // throw new Error("Failed to fetch data");
     }
 
     const data = await response.json();
@@ -1075,20 +1072,20 @@ debugger;
 
   const onButtonClick = (key) => {
     // Parameters for downloading object
-    const params = {
-      Bucket: albumBucketName,
-      Key: key,
-    };
+    // const params = {
+    //   Bucket: albumBucketName,
+    //   Key: key,
+    // };
 
     // Generate a pre-signed URL for the object
-    s3.getSignedUrl('getObject', params, (err, url) => {
-      if (err) {
-        handlerLogs('getSignedUrl Error' + err);
-      } else {
-        // Download the object using the generated URL
-        window.open(url, '_blank');
-      }
-    });
+    // s3.getSignedUrl('getObject', params, (err, url) => {
+    //   if (err) {
+    //     handlerLogs('getSignedUrl Error' + err);
+    //   } else {
+    //     // Download the object using the generated URL
+    //     window.open(url, '_blank');
+    //   }
+    // });
   };
   const checkHandler = () => {
     setChecked(!isChecked);
@@ -1205,7 +1202,7 @@ debugger;
                   <button
                     className="button"
                     onClick={() => {
-                      recordHandler();
+                      // recordHandler();
                       stopRecording();
                     }}
                   >

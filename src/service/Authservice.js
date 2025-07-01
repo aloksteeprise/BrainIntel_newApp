@@ -1,38 +1,38 @@
 import axios from 'axios';
 import jwtDecode from 'jwt-decode';
 
-import { fetchAuthSession, getCurrentUser, signIn, signOut, verifyTOTPSetup, signUp,confirmSignUp,updateUserAttributes,currentAuthenticatedUser  } from 'aws-amplify/auth';
-import { Amplify } from 'aws-amplify';
-import AWS from 'aws-sdk';
-import awsconfig from '../aws-exports';
-import {withAuthenticator } from '@aws-amplify/ui-react'
-import { confirmResetPassword ,resendSignUpCode,updatePassword,sendUserAttributeVerificationCode,updateUserAttribute,fetchUserAttributes } from 'aws-amplify/auth';
+//import { fetchAuthSession, getCurrentUser, signIn, signOut, verifyTOTPSetup, signUp,confirmSignUp,updateUserAttributes,currentAuthenticatedUser  } from 'aws-amplify/auth';
+// import { Amplify } from 'aws-amplify';
+// import AWS from 'aws-sdk';
+// import awsconfig from '../aws-exports';
+// import {withAuthenticator } from '@aws-amplify/ui-react'
+// import { confirmResetPassword ,resendSignUpCode,updatePassword,sendUserAttributeVerificationCode,updateUserAttribute,fetchUserAttributes } from 'aws-amplify/auth';
 
-import { resetPassword as awsResetPassword  } from 'aws-amplify/auth';
-Amplify.configure(awsconfig, {ssr: true})
+// import { resetPassword as awsResetPassword  } from 'aws-amplify/auth';
+// Amplify.configure(awsconfig, {ssr: true})
 
 
-var albumBucketName = 'amplify-brainintel1-dev-59877-deployment';
-var bucketRegion = 'ap-south-1';
-var IdentityPoolIdt = 'ap-south-1:3b01329c-a976-4e4e-a0f5-70a53b026882';
+// var albumBucketName = 'amplify-brainintel1-dev-59877-deployment';
+// var bucketRegion = 'ap-south-1';
+// var IdentityPoolIdt = 'ap-south-1:3b01329c-a976-4e4e-a0f5-70a53b026882';
 
-  AWS.config.region = bucketRegion; // Region
-  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: IdentityPoolIdt,
-  });
-  AWS.config.update({
-    region: bucketRegion,
-    apiVersion: 'latest',
-    credentials: {
-      accessKeyId: 'AKIA6QH6OHEDILGKQ4VX',
-      secretAccessKey: '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',
-    },
-  });
+  // AWS.config.region = bucketRegion; // Region
+  // AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+  //   IdentityPoolId: IdentityPoolIdt,
+  // });
+  // AWS.config.update({
+  //   region: bucketRegion,
+  //   apiVersion: 'latest',
+  //   credentials: {
+  //     accessKeyId: 'AKIA6QH6OHEDILGKQ4VX',
+  //     secretAccessKey: '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',
+  //   },
+  // });
 
-  var s3 = new AWS.S3({
-    apiVersion: '2012-10-17',
-    params: { Bucket: albumBucketName },
-  });
+  // var s3 = new AWS.S3({
+  //   apiVersion: '2012-10-17',
+  //   params: { Bucket: albumBucketName },
+  // });
 
 function decodeJWT(token) {
   if (!token) return;
@@ -49,7 +49,10 @@ export const login = async (email, password) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email,
-        password: password
+        password: password,
+        isApp: false,
+        isAdmin : false
+
       })
     });
     const data = await response.json();
@@ -144,15 +147,15 @@ export const validateEmailSendOtp = async (username) => {
   return result;
 };
 export const userAttributeVerificationCode = async (email, verificationCode) => {
-  let result;
-  try{
-    await updateUserAttribute(email,verificationCode);
-    result = '1-'+'Success';
-  }
-  catch(error){
-    result = '0-'+ error.message;
-  }
-  return result;
+  // let result;
+  // try{
+  //   await updateUserAttribute(email,verificationCode);
+  //   result = '1-'+'Success';
+  // }
+  // catch(error){
+  //   result = '0-'+ error.message;
+  // }
+  // return result;
 };
 // Define the handleConfirmResetPassword function
 
@@ -401,46 +404,46 @@ export const handleSignOut = async () => {
 }
 
 export const handlerLogs = async (message) => {
-  const loginUser = getLoginUserName();
-  const url = window.location.href;
-  const body = url +' - '+ loginUser +' - '+ message;
-  const date = new Date().toISOString().split('T')[0];
-  const LoggerFileName = getLoggerFileName();
-  const logFileName = `${LoggerFileName}.txt`;
-  const bucketName = albumBucketName  // Replace with your bucket name
-  const folderName='Logs'
+  // const loginUser = getLoginUserName();
+  // const url = window.location.href;
+  // const body = url +' - '+ loginUser +' - '+ message;
+  // const date = new Date().toISOString().split('T')[0];
+  // const LoggerFileName = getLoggerFileName();
+  // const logFileName = `${LoggerFileName}.txt`;
+  // const bucketName = albumBucketName  // Replace with your bucket name
+  // const folderName='Logs'
   
-  const params = {
-      Bucket: albumBucketName,
-      Key: `${folderName}/${logFileName}`,
-      Body: `${new Date().toISOString()}: ${body}\n`,
-      ContentType: 'text/plain',
-      ACL: 'private'
-  };
+  // const params = {
+  //     Bucket: albumBucketName,
+  //     Key: `${folderName}/${logFileName}`,
+  //     Body: `${new Date().toISOString()}: ${body}\n`,
+  //     ContentType: 'text/plain',
+  //     ACL: 'private'
+  // };
 
-  try {
-      // Check if the file already exists
-      const existingObject = await s3.getObject({ Bucket: bucketName, Key: params.Key }).promise();
-      params.Body = existingObject.Body.toString() + params.Body;
-  } catch (err) {
-      // File does not exist, proceed with new log
-      if (err.code !== 'NoSuchKey') {
-          throw err;
-      }
-  }
+  // try {
+     
+  //     const existingObject = await s3.getObject({ Bucket: bucketName, Key: params.Key }).promise();
+  //     params.Body = existingObject.Body.toString() + params.Body;
+  // } catch (err) {
+  //     // File does not exist, proceed with new log
+  //     if (err.code !== 'NoSuchKey') {
+  //         throw err;
+  //     }
+  // }
 
-  try {
-      await s3.putObject(params).promise();
-      return {
-          statusCode: 200,
-          body: JSON.stringify({ message: 'Log written successfully' }),
-      };
-  } catch (err) {
-      return {
-          statusCode: 500,
-          body: JSON.stringify({ error: 'Failed to write log' }),
-      };
-  }
+  // try {
+  //     await s3.putObject(params).promise();
+  //     return {
+  //         statusCode: 200,
+  //         body: JSON.stringify({ message: 'Log written successfully' }),
+  //     };
+  // } catch (err) {
+  //     return {
+  //         statusCode: 500,
+  //         body: JSON.stringify({ error: 'Failed to write log' }),
+  //     };
+  // }
 };
 
 
@@ -475,57 +478,57 @@ const getLoggerFileName=()=>{
 }
 
 
-export const submitFeedback = async (feedbackValue,userfeedbackcount) => {
+// export const submitFeedback = async (feedbackValue,userfeedbackcount) => {
   
-  try {
+//   try {
    
-    const userAttributes= await  handleFetchUserAttributes();
-    let userAttribute = userAttributes['custom:Userfeedback'];
+//     const userAttributes= await  handleFetchUserAttributes();
+//     let userAttribute = userAttributes['custom:Userfeedback'];
    
-  if(userAttribute!==undefined && userAttribute.length>0)
-    {
-      let lastChar = userAttribute.substring(userAttribute.length - 1);
-      if(lastChar.includes(';'))
-      {
-        userAttribute = userAttribute.substring(userAttribute,userAttribute.length - 1);
-      }
-      userAttribute = userAttribute +';'+feedbackValue;
-      if(userAttribute.length>2048){
-        console.log('storage has been fulled');
-      }
-      else{
-        await updateUserAttributes({
+//   if(userAttribute!==undefined && userAttribute.length>0)
+//     {
+//       let lastChar = userAttribute.substring(userAttribute.length - 1);
+//       if(lastChar.includes(';'))
+//       {
+//         userAttribute = userAttribute.substring(userAttribute,userAttribute.length - 1);
+//       }
+//       userAttribute = userAttribute +';'+feedbackValue;
+//       if(userAttribute.length>2048){
+//         console.log('storage has been fulled');
+//       }
+//       else{
+//         await updateUserAttributes({
     
-          userAttributes: {
-            family_name:feedbackValue,
-            ['custom:Userfeedback']: userAttribute,
-            ['custom:LatestFeedback']: userfeedbackcount,
+//           userAttributes: {
+//             family_name:feedbackValue,
+//             ['custom:Userfeedback']: userAttribute,
+//             ['custom:LatestFeedback']: userfeedbackcount,
             
-          }
-        });
+//           }
+//         });
   
-      }
-      console.log('Feedback submitted successfully');
-      return { success: true, message: 'Feedback submitted successfully' };
-    }
-    else if(userAttribute == undefined){
-      await updateUserAttributes({
+//       }
+//       console.log('Feedback submitted successfully');
+//       return { success: true, message: 'Feedback submitted successfully' };
+//     }
+//     else if(userAttribute == undefined){
+//       await updateUserAttributes({
     
-        userAttributes: {
-          family_name:feedbackValue,
-          ['custom:Userfeedback']: feedbackValue,
-          ['custom:LatestFeedback']: userfeedbackcount
-        }
-      });
-      return { success: true, message: 'Feedback submitted successfully' };
-    }
-    else{
-      return { success: false, message: 'Feedback not submitted' };
+//         userAttributes: {
+//           family_name:feedbackValue,
+//           ['custom:Userfeedback']: feedbackValue,
+//           ['custom:LatestFeedback']: userfeedbackcount
+//         }
+//       });
+//       return { success: true, message: 'Feedback submitted successfully' };
+//     }
+//     else{
+//       return { success: false, message: 'Feedback not submitted' };
 
-    }
+//     }
     
     
-    //console.log(userAttribute.length)
+//     //console.log(userAttribute.length)
     
   
     
@@ -534,40 +537,40 @@ export const submitFeedback = async (feedbackValue,userfeedbackcount) => {
 
     
     
-  } 
-  catch (error) {
-    console.log('Error submitting feedback:', error);
-    return { success: false, message: 'Error submitting feedback' };
+//   } 
+//   catch (error) {
+//     console.log('Error submitting feedback:', error);
+//     return { success: false, message: 'Error submitting feedback' };
    
-  }
-};
+//   }
+// };
 
-export const handleFetchUserAttributes = async function () {
-  try {
-    const userAttributes = await fetchUserAttributes();
-    return userAttributes;
-   
-
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-}
-
-
-
-export const latestUserAttributes = async function () {
-  try {
-    const userAttributes = await fetchUserAttributes();
-    let userAttribute = userAttributes['custom:LatestFeedback'];
-    // console.log(userAttributes);
-    return userAttributes;
+// export const handleFetchUserAttributes = async function () {
+//   try {
+//     const userAttributes = await fetchUserAttributes();
+//     return userAttributes;
    
 
-  } catch (error) {
-    console.log(error);
-  }
-}
+//   } catch (error) {
+//     console.log(error);
+//     return null;
+//   }
+// }
+
+
+
+// export const latestUserAttributes = async function () {
+//   try {
+//     const userAttributes = await fetchUserAttributes();
+//     let userAttribute = userAttributes['custom:LatestFeedback'];
+//     // console.log(userAttributes);
+//     return userAttributes;
+   
+
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
 
 
 // export const submitLatestFeedback = async (feedbackValue) => {
@@ -589,19 +592,19 @@ export const latestUserAttributes = async function () {
 //   }
 // };
 
-export const submitLoginUserAttributeFeedback = async (inputvalue) => {
+// export const submitLoginUserAttributeFeedback = async (inputvalue) => {
   
-  try {
+//   try {
 
-     updateUserAttributes({
-      userAttributes: {
-        family_name:inputvalue
-    }
-  });
-  } 
-  catch (error) {
-    console.log('Error submitting feedback:', error);
-    return { success: false, message: 'Error submitting feedback' };
-  }
+//      updateUserAttributes({
+//       userAttributes: {
+//         family_name:inputvalue
+//     }
+//   });
+//   } 
+//   catch (error) {
+//     console.log('Error submitting feedback:', error);
+//     return { success: false, message: 'Error submitting feedback' };
+//   }
 
-};
+// };

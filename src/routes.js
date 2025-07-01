@@ -23,7 +23,8 @@ const MainRoutes = () => {
       <Route path="/ValidateEmail" element={<ValidateEmailAddress />} />
       <Route path="/ValidateEmailOtp" element={<EmailVerificationPage />} />
       {/* <Route path="/record" element={<RecorderPage/>}/> */}
-      <Route path="/record" element={<RecorderPage />} />
+      {/* <Route path="/record" element={<RecorderPage />} /> */}
+       <Route path="/record" element={<Protected Component={RecorderPage} />} />
       {/* element={<Protected Component={RecorderPage} />} */}
       <Route path="/update" element={<Protected Component={UpdatePassword} />}/>
     </Routes>
