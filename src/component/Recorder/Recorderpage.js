@@ -948,37 +948,43 @@ const submitfeedbackhandler = async () => {
 
     let reportIdQueue = []; 
 const checkResults = async () => {
-  const userInfo = getUserInfo();
-   const UserID = localStorage.getItem('number')
-
+  const UserID = localStorage.getItem("number");
 
   if (!UserID) {
     alert("UserID is missing.");
     return;
   }
+
   try {
-    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`,
-  {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`, // ⬅️ Send token in header
-    },
-  }
-);
-debugger;
-    
+    const response = await fetch(
+      `${process.env.REACT_APP_API_URL}/api/list-results?UserID=${encodeURIComponent(UserID)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
     if (!response.ok) {
-    if(response.status == 403)
+      if (response.status === 403) {
         alert("Session expired. Log in to continue.");
+      }
       return;
-    // throw new Error("Failed to fetch data");
     }
 
     const data = await response.json();
 
     if (Array.isArray(data.files) && data.files.length > 0) {
-      setResult(data.files);
-      const reportIds = data.files.map(item => item.reportId);
+      const files = data.files.map((item) => ({
+        name: item.name,
+        reportId: item.reportId,
+      }));
+
+      setResult(files);
+
+      // Store report IDs if needed later
+      const reportIds = files.map((item) => item.reportId);
       localStorage.setItem("reportIds", JSON.stringify(reportIds));
     } else {
       setResult([]);
@@ -990,6 +996,7 @@ debugger;
     alert("Failed to fetch result files.");
   }
 
+  // Update UI state
   setState((state) => ({
     ...state,
     completed: false,
@@ -1003,7 +1010,6 @@ debugger;
     record: false,
   }));
 };
-
 
 
 
@@ -1372,7 +1378,7 @@ debugger;
             <div style={{ fontFamily: 'Proxima' }}>
               {result.length === 0 && <p>No records found!</p>}
 
-{result.length > 0 &&
+{/* {result.length > 0 &&
   result.map((r, index) => (
     <p key={index}>
       <a
@@ -1384,8 +1390,21 @@ debugger;
         {r.name || r.url.split("/").pop()}
       </a>
       <span style={{ marginLeft: "10px", fontSize: "12px", color: "#777" }}>
-        {/* {new Date(r.createdDate).toLocaleString()} */}
       </span>
+    </p>
+  ))} */}
+{result.length > 0 &&
+  result.map((r, index) => (
+    <p key={index}>
+      <a
+        className="custLabel"
+        href={`${process.env.REACT_APP_API_URL}/api/download-report?userId=1&reportId=${r.reportId}`}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {r.name || `Report ${index + 1}`}
+      </a>
     </p>
   ))}
 
