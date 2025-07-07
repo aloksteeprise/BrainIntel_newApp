@@ -402,27 +402,27 @@ function RecorderPage() {
     const username = folderName.split('@')[0];
 
 
+const formData = new FormData();
+formData.append("userId", id);
+formData.append("wavFileName", name + ".wav");
+formData.append("file", state.audioFile); // ✅ "file" must match multer field
+formData.append("wavFilePath", `/uploads/audio/${name}.wav`);
+formData.append("pdfFileName", "");
+formData.append("pdfFilePath", "");
+formData.append("isFileGenerated", "false");
+formData.append("updatedBy", username);
 
-    const formData = new FormData();
-    formData.append("userId", id);
-    formData.append("email", folderName);
-    formData.append("wavFileName", name + ".wav");
-    formData.append("file", state.audioFile); // ✅ Must be "file"
-    formData.append("wavFilePath", `/uploads/audio/${name}.wav`);
-    formData.append("pdfFileName", "");
-    formData.append("pdfFilePath", "");
-    formData.append("isFileGenerated", "false");
-    formData.append("updatedBy", username);
-
-
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/create-report`, {
-        method: "POST",
-        headers: {
-        Authorization: `Bearer ${token}`, 
+try {
+  const response = await fetch(
+    `${process.env.REACT_APP_API_URL}/api/create-report?email=${encodeURIComponent(folderName)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-        body: formData,
-      });
+      body: formData,
+    }
+  );
 
       const data = await response.json();
       // var params = {
