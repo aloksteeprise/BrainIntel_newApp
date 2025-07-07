@@ -402,16 +402,24 @@ function RecorderPage() {
     const username = folderName.split('@')[0];
 
 
+
+
+const filename = name + ".wav";
+
+// 👇 Wrap the blob into a File, giving it the correct name
+const audioFile = new File([state.audioFile], filename, { type: "audio/wav" });
+
 const formData = new FormData();
 formData.append("userId", id);
-formData.append("wavFileName", name + ".wav");
-formData.append("file", state.audioFile); // ✅ "file" must match multer field
-formData.append("wavFilePath", `/uploads/audio/${name}.wav`);
+formData.append("wavFileName", filename); // Already correct
+formData.append("file", audioFile); // ✅ Now includes the correct filename
+formData.append("wavFilePath", `/uploads/audio/${filename}`);
 formData.append("pdfFileName", "");
 formData.append("pdfFilePath", "");
 formData.append("isFileGenerated", "false");
 formData.append("updatedBy", username);
 
+debugger;
 try {
   const response = await fetch(
     `${process.env.REACT_APP_API_URL}/api/create-report?email=${encodeURIComponent(folderName)}`,
